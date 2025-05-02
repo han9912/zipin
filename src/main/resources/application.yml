@@ -1,0 +1,25 @@
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+  application:
+    name: zipin
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/db_zipin?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: admin
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 或 create、create-drop、validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  main:
+    allow-bean-definition-overriding: true
+
