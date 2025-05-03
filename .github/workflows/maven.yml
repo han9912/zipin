@@ -64,12 +64,10 @@ jobs:
     - name: Run Tests
       run: mvn test
       env:
-        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_db
+        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test_db
         SPRING_DATASOURCE_USERNAME: root
         SPRING_DATASOURCE_PASSWORD: root
         SPRING_PROFILES_ACTIVE: test
-        DB_USERNAME: ${{ secrets.DB_USERNAME }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
