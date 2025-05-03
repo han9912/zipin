@@ -28,7 +28,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10  # Increased retries for better readiness
@@ -41,16 +41,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-
-    - name: Wait for MySQL to be ready
-      run: |
-        echo "Waiting for MySQL to be ready..."
-        for i in {1..20}; do
-          if mysqladmin ping -h localhost -uroot -proot; then
-            break
-          fi
-          sleep 5
-        done
 
     - name: Initialize Database
       run: |
