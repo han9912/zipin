@@ -45,7 +45,7 @@ jobs:
     - name: Wait for MySQL to be ready
       run: |
         for i in {1..30}; do
-          if mysqladmin --protocol=tcp ping -h mysql -uroot -proot --silent; then
+          if mysqladmin --protocol=tcp ping -h localhost -uroot -proot --silent; then
             echo "MySQL is ready!"
             break
           fi
@@ -55,7 +55,7 @@ jobs:
 
     - name: Initialize Database
       run: |
-        mysql --protocol=tcp -h mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
+        mysql --protocol=tcp -h localhost -uroot -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
     
 
     - name: Build with Maven
@@ -64,7 +64,7 @@ jobs:
     - name: Run Tests
       run: mvn test
       env:
-        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test_db
+        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_db
         SPRING_DATASOURCE_USERNAME: root
         SPRING_DATASOURCE_PASSWORD: root
         SPRING_PROFILES_ACTIVE: test
