@@ -68,6 +68,8 @@ jobs:
         SPRING_DATASOURCE_USERNAME: root  # Use 'root' instead of 'admin'
         SPRING_DATASOURCE_PASSWORD: root
         SPRING_PROFILES_ACTIVE: test
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
