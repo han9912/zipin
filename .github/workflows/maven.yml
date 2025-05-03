@@ -42,6 +42,17 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
+    - name: Wait for MySQL to be ready
+      run: |
+        for i in {1..30}; do
+          if mysqladmin ping -h localhost -uroot -proot --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
+
     - name: Initialize Database
       run: |
         mysql -h localhost -uroot -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
