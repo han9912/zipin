@@ -19,6 +19,20 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+          ports:
+            - 3306:3306
+          options: >-
+            --health-cmd="mysqladmin ping"
+            --health-interval=10s
+            --health-timeout=5s
+            --health-retries=3
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 17
@@ -27,8 +41,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+
+    - name: Wait for MySQL to be ready
+      run: |
+        echo "Waiting for MySQL to be ready..."
+        for i in {1..10}; do
+          if mysqladmin ping -h localhost -uroot -proot; then
+            break
+          fi
+          sleep 3
+        done
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+
+    - name: Run Tests
+      run: mvn test
+      env:
+        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_db
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+        SPRING_PROFILES_ACTIVE: test
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph

@@ -14,6 +14,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public Result<?> handleException(Exception e) {
-        return Result.fail("服务器内部错误 / Server internal error");
+        return Result.fail("服务器内部错误 / Server internal error: " + e.getMessage());
     }
 }
