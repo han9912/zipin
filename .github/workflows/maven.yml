@@ -65,7 +65,7 @@ jobs:
       run: mvn test
       env:
         SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_db
-        SPRING_DATASOURCE_USERNAME: root  # Use 'root' instead of 'admin'
+        SPRING_DATASOURCE_USERNAME: root
         SPRING_DATASOURCE_PASSWORD: root
         SPRING_PROFILES_ACTIVE: test
         DB_USERNAME: ${{ secrets.DB_USERNAME }}
