@@ -62,6 +62,7 @@ jobs:
       run: mvn -B package --file pom.xml
       env:
         SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
 
     - name: Run Tests
       run: mvn test
