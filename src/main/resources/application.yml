@@ -26,3 +26,12 @@ spring:
   profiles:
     active: dev
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    export:
+      prometheus:
+        enabled: true
