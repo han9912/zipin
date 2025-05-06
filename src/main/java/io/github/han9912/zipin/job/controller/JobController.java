@@ -1,6 +1,7 @@
 package io.github.han9912.zipin.job.controller;
 
 import io.github.han9912.zipin.common.dto.Result;
+import io.github.han9912.zipin.common.util.AuthUtil;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.service.JobService;
@@ -17,14 +18,13 @@ public class JobController {
     JobService jobService;
     @Autowired
     AuthService authService;
+    @Autowired
+    AuthUtil authUtil;
 
-    private Long resolveUid(String authHeader) {
-        return authService.verifyToken(authHeader.replace("Bearer ", ""));
-    }
 
     @PostMapping
     public Result<JobResponse> postJob(@RequestBody JobRequest req, @RequestHeader("Authorization") String auth) {
-        return Result.ok(jobService.createJob(req, resolveUid(auth)));
+        return Result.ok(jobService.createJob(req, authUtil.resolveUid(auth)));
     }
 
     @GetMapping
@@ -39,12 +39,12 @@ public class JobController {
 
     @PutMapping("/{id}")
     public Result<JobResponse> update(@PathVariable Long id, @RequestBody JobRequest req, @RequestHeader("Authorization") String auth) {
-        return Result.ok(jobService.updateJob(id, req, resolveUid(auth)));
+        return Result.ok(jobService.updateJob(id, req, authUtil.resolveUid(auth)));
     }
 
     @DeleteMapping("/{id}")
     public Result<JobResponse> delete(@PathVariable Long id, @RequestHeader("Authorization") String auth) {
-        jobService.deleteJob(id, resolveUid(auth));
+        jobService.deleteJob(id, authUtil.resolveUid(auth));
         return Result.ok(null);
     }
 }

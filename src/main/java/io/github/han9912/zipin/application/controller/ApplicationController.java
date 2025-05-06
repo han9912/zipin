@@ -5,6 +5,7 @@ import io.github.han9912.zipin.application.entity.Application;
 import io.github.han9912.zipin.application.entity.ApplicationStatus;
 import io.github.han9912.zipin.application.service.ApplicationService;
 import io.github.han9912.zipin.common.dto.Result;
+import io.github.han9912.zipin.common.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,15 +17,18 @@ import java.util.List;
 public class ApplicationController {
     @Autowired
     ApplicationService service;
+    @Autowired
+    AuthUtil authUtil;
 
     @PostMapping
     public Result<Application> apply(@RequestBody ApplicationRequest req,
-                                     @RequestHeader("X-User-Id") Long uid) {
-        return Result.ok(service.apply(uid, req));
+                                     @RequestHeader("Authorization") String auth) {
+        return Result.ok(service.apply(authUtil.resolveUid(auth), req));
     }
 
     @GetMapping("/me")
-    public Result<List<Application>> my(@RequestHeader("X-User-Id") Long uid) {
+    public Result<List<Application>> my(@RequestHeader("Authorization") String auth) {
+        Long uid = authUtil.resolveUid(auth);
         return Result.ok(service.getMyApplications(uid));
     }
 
