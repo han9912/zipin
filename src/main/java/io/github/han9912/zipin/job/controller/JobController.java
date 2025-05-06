@@ -5,7 +5,6 @@ import io.github.han9912.zipin.common.util.AuthUtil;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.service.JobService;
-import io.github.han9912.zipin.user.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +15,6 @@ import java.util.List;
 public class JobController {
     @Autowired
     JobService jobService;
-    @Autowired
-    AuthService authService;
     @Autowired
     AuthUtil authUtil;
 
