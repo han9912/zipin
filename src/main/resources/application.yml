@@ -36,11 +36,14 @@ management:
       prometheus:
         enabled: true
 
-  logging:
-    level:
-      root: info
-      io.github.han9912.zipin: debug
-    file:
-      name: logs/app.log
-    pattern:
-      console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+logging:
+  level:
+    root: info
+    io.github.han9912.zipin: debug
+  file:
+    name: logs/app.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+jwt:
+  secret: "this-is-a-strong-secret-key-with-32+-bytes"
