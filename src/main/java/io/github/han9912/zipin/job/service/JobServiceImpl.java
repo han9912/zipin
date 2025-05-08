@@ -1,26 +1,54 @@
 package io.github.han9912.zipin.job.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.entity.Job;
 import io.github.han9912.zipin.job.repository.JobRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class JobServiceImpl implements JobService{
+    private static final Logger logger = LoggerFactory.getLogger(JobServiceImpl.class);
     @Autowired
     JobRepository repo;
+    @Autowired
+    RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public JobResponse createJob(JobRequest req, Long recruiterId) {
         Job job = Job.fromRequest(req, recruiterId);
+        logger.info("新建职位：{} 创建人：{}", job.getTitle(), recruiterId);
         return toResponse(repo.save(job));
     }
 
     public List<JobResponse> searchJobs(String keyword){
-        return repo.search(keyword).stream().map(this::toResponse).toList();
+        try {
+            String redisKey = "hot_jobs:" + keyword;
+            ValueOperations<String, String> ops = redisTemplate.opsForValue();
+            String cached = ops.get(redisKey);
+            if (cached != null) {
+                logger.info("Got from redis: {}", keyword);
+                return Collections.singletonList(mapper.readValue(cached, JobResponse.class));
+            }
+
+            List<JobResponse> result = repo.search(keyword).stream().map(this::toResponse).toList();
+            ops.set(redisKey, mapper.writeValueAsString(result), 10, TimeUnit.MINUTES);
+            logger.info("Cached to redis: {} Entries: {}", keyword, result.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("Search jobs error", e);
+            return repo.search(keyword).stream().map(this::toResponse).toList();
+        }
     }
 
     public JobResponse getJob(Long id){
