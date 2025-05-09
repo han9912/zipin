@@ -6,6 +6,7 @@ import io.github.han9912.zipin.application.dto.ApplicationRequest;
 import io.github.han9912.zipin.application.entity.Application;
 import io.github.han9912.zipin.application.entity.ApplicationStatus;
 import io.github.han9912.zipin.application.repository.ApplicationRepository;
+import io.github.han9912.zipin.common.service.NotificationService;
 import io.github.han9912.zipin.resume.repository.ResumeRepository;
 import io.github.han9912.zipin.resumeprofile.entity.ResumeProfile;
 import io.github.han9912.zipin.resumeprofile.repository.ResumeProfileRepository;
@@ -24,23 +25,26 @@ public class ApplicationServiceImpl implements ApplicationService {
     ResumeProfileRepository profileRepo;
     @Autowired
     ObjectMapper mapper;
+    @Autowired
+    NotificationService notificationService;
 
     public Application apply(Long userId, ApplicationRequest req) {
-        Application app = new Application();
-        app.setUserId(userId);
-        app.setJobId(req.jobId);
-        app.setResumeId(req.resumeId);
+        Application application = new Application();
+        application.setUserId(userId);
+        application.setJobId(req.jobId);
+        application.setResumeId(req.resumeId);
 
         // 保存结构化快照（JSON）
         ResumeProfile profile = profileRepo.findByUserId(userId).orElse(null);
         if (profile != null) {
             try {
-                app.setProfileSnapshot(mapper.writeValueAsString(profile));
+                application.setProfileSnapshot(mapper.writeValueAsString(profile));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("简历快照保存失败", e);
             }
         }
-        return repo.save(app);
+        notificationService.sendApplicationConfirmation(userId, req.jobId);
+        return repo.save(application);
     }
 
     public List<Application> getMyApplications(Long userId) {

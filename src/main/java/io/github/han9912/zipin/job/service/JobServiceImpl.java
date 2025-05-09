@@ -1,6 +1,7 @@
 package io.github.han9912.zipin.job.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.han9912.zipin.common.service.NotificationService;
 import io.github.han9912.zipin.common.util.CacheWithLockHelper;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
@@ -26,6 +27,8 @@ public class JobServiceImpl implements JobService{
     RedisTemplate<String, String> redisTemplate;
     @Autowired
     CacheWithLockHelper cacheWithLockHelper;
+    @Autowired
+    NotificationService notificationService;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public JobResponse createJob(JobRequest req, Long recruiterId) {
@@ -80,6 +83,8 @@ public class JobServiceImpl implements JobService{
             throw new RuntimeException("没有权限删除此职位 / No permission to delete");
         }
         repo.delete(job);
+        logger.info("删除职位 {} by recruiter {}", id, recruiterId);
+        notificationService.sendAsyncDeleteNotice(id, recruiterId);
     }
 
     private JobResponse toResponse(Job job) {
