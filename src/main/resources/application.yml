@@ -3,6 +3,11 @@ spring:
     host: localhost
     port: 6379
 
+  data:
+    redis:
+      repositories:
+        enabled: false
+
   application:
     name: zipin
 
@@ -19,6 +24,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+    open-in-view: false
 
   main:
     allow-bean-definition-overriding: true
@@ -47,3 +53,6 @@ logging:
 
 jwt:
   secret: "this-is-a-strong-secret-key-with-32+-bytes"
+
+redisson:
+  address: redis://127.0.0.1:6379

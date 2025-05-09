@@ -1,6 +1,7 @@
 package io.github.han9912.zipin.job.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.han9912.zipin.common.util.CacheWithLockHelper;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.entity.Job;
@@ -23,6 +24,8 @@ public class JobServiceImpl implements JobService{
     JobRepository repo;
     @Autowired
     RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    CacheWithLockHelper cacheWithLockHelper;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public JobResponse createJob(JobRequest req, Long recruiterId) {
@@ -52,7 +55,12 @@ public class JobServiceImpl implements JobService{
     }
 
     public JobResponse getJob(Long id){
-        return toResponse(repo.findById(id).orElseThrow());
+        Job job = cacheWithLockHelper.getWithLogicalLock(
+                "job:detail:" + id,
+                () -> repo.findById(id).orElse(null),
+                1800
+        );
+        return toResponse(job);
     }
 
     public JobResponse updateJob(Long id, JobRequest req, Long recruiterId){
