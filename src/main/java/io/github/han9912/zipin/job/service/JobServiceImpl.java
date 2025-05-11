@@ -29,6 +29,8 @@ public class JobServiceImpl implements JobService{
     CacheWithLockHelper cacheWithLockHelper;
     @Autowired
     NotificationService notificationService;
+    @Autowired
+    HotJobService hotJobService;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public JobResponse createJob(JobRequest req, Long recruiterId) {
@@ -37,19 +39,27 @@ public class JobServiceImpl implements JobService{
         return toResponse(repo.save(job));
     }
 
+    public void recordSearchKeyword(String keyword) {
+        redisTemplate.opsForZSet().incrementScore("hot_keywords", keyword, 1);
+    }
+
     public List<JobResponse> searchJobs(String keyword){
         try {
+            recordSearchKeyword(keyword);
             String redisKey = "hot_jobs:" + keyword;
             ValueOperations<String, String> ops = redisTemplate.opsForValue();
             String cached = ops.get(redisKey);
             if (cached != null) {
                 logger.info("Got from redis: {}", keyword);
-                return Collections.singletonList(mapper.readValue(cached, JobResponse.class));
+                List<JobResponse> responses = Collections.singletonList(mapper.readValue(cached, JobResponse.class));
+                hotJobService.incrementHotScore(responses, 1);
+                return responses;
             }
 
             List<JobResponse> result = repo.search(keyword).stream().map(this::toResponse).toList();
             ops.set(redisKey, mapper.writeValueAsString(result), 10, TimeUnit.MINUTES);
             logger.info("Cached to redis: {} Entries: {}", keyword, result.size());
+            hotJobService.incrementHotScore(result, 1);
             return result;
         } catch (Exception e) {
             logger.error("Search jobs error", e);
@@ -85,6 +95,15 @@ public class JobServiceImpl implements JobService{
         repo.delete(job);
         logger.info("删除职位 {} by recruiter {}", id, recruiterId);
         notificationService.sendAsyncDeleteNotice(id, recruiterId);
+    }
+
+    public List<JobResponse> getTopJobs(int topN) {
+        try {
+            return hotJobService.getTopJobs(topN).stream().map(this::toResponse).toList();
+        } catch (Exception e) {
+            logger.error("Get top jobs error", e);
+            return hotJobService.getTopJobs(topN).stream().map(this::toResponse).toList();
+        }
     }
 
     private JobResponse toResponse(Job job) {

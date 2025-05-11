@@ -11,4 +11,5 @@ public interface JobService {
     JobResponse getJob(Long id);
     JobResponse updateJob(Long id, JobRequest req, Long recruiterId);
     void deleteJob(Long id, Long recruiterId);
+    List<JobResponse> getTopJobs(int topN);
 }

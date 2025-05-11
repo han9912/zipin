@@ -5,6 +5,7 @@ import io.github.han9912.zipin.common.dto.Result;
 import io.github.han9912.zipin.common.util.AuthUtil;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
+import io.github.han9912.zipin.job.service.HotJobService;
 import io.github.han9912.zipin.job.service.JobService;
 import io.github.han9912.zipin.user.entity.Role;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import java.util.List;
 public class JobController {
     @Autowired
     JobService jobService;
+    @Autowired
+    HotJobService hotJobService;
     @Autowired
     AuthUtil authUtil;
 
@@ -48,4 +51,10 @@ public class JobController {
         jobService.deleteJob(id, authUtil.resolveUid(auth));
         return Result.ok(null);
     }
+
+    @GetMapping("/hot")
+    public Result<List<JobResponse>> getHotJobs(@RequestParam(defaultValue = "10") int topN) {
+        return Result.ok(jobService.getTopJobs(topN));
+    }
+
 }

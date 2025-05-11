@@ -7,6 +7,7 @@ import io.github.han9912.zipin.application.entity.Application;
 import io.github.han9912.zipin.application.entity.ApplicationStatus;
 import io.github.han9912.zipin.application.repository.ApplicationRepository;
 import io.github.han9912.zipin.common.service.NotificationService;
+import io.github.han9912.zipin.job.service.HotJobService;
 import io.github.han9912.zipin.resume.repository.ResumeRepository;
 import io.github.han9912.zipin.resumeprofile.entity.ResumeProfile;
 import io.github.han9912.zipin.resumeprofile.repository.ResumeProfileRepository;
@@ -27,6 +28,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     ObjectMapper mapper;
     @Autowired
     NotificationService notificationService;
+    @Autowired
+    HotJobService hotJobService;
 
     public Application apply(Long userId, ApplicationRequest req) {
         Application application = new Application();
@@ -43,6 +46,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 throw new RuntimeException("简历快照保存失败", e);
             }
         }
+        hotJobService.incrementHotScore(req.jobId, 3);
         notificationService.sendApplicationConfirmation(userId, req.jobId);
         return repo.save(application);
     }
