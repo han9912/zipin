@@ -4,7 +4,9 @@ import io.github.han9912.zipin.invitation.dto.InvitationRequest;
 import io.github.han9912.zipin.invitation.entity.Invitation;
 import io.github.han9912.zipin.invitation.repository.InvitationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class InvitationServiceImpl implements InvitationService {
     @Autowired
     InvitationRepository repo;
