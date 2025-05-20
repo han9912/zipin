@@ -22,6 +22,7 @@ spring:
       ddl-auto: update  # 或 create、create-drop、validate
     show-sql: true
     properties:
+      hibernate.transaction.jta.platform: org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform
       hibernate:
         format_sql: true
     open-in-view: false
