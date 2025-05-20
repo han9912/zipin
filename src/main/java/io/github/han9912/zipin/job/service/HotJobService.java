@@ -2,9 +2,8 @@ package io.github.han9912.zipin.job.service;
 
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.entity.Job;
-import io.github.han9912.zipin.job.repository.JobRepository;
+import io.github.han9912.zipin.job.mapper.JobMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +17,7 @@ public class HotJobService {
     @Autowired
     StringRedisTemplate redisTemplate;
     @Autowired
-    JobRepository jobRepo;
+    JobMapper jobMapper;
 
     public void incrementHotScore(Long jobId, int score) {
         redisTemplate.opsForZSet().incrementScore(HOT_JOB_KEY, jobId.toString(), score);
@@ -36,6 +35,6 @@ public class HotJobService {
         Set<String> jobIds = redisTemplate.opsForZSet().reverseRange(HOT_JOB_KEY, 0, topN - 1);
         if(jobIds == null || jobIds.isEmpty()) return Collections.emptyList();
         List<Long> ids = jobIds.stream().map(Long::valueOf).toList();
-        return jobRepo.findAllById(ids);
+        return jobMapper.findAllById(ids);
     }
 }

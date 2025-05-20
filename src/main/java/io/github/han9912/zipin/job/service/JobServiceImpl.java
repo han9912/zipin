@@ -6,7 +6,7 @@ import io.github.han9912.zipin.common.util.CacheWithLockHelper;
 import io.github.han9912.zipin.job.dto.JobRequest;
 import io.github.han9912.zipin.job.dto.JobResponse;
 import io.github.han9912.zipin.job.entity.Job;
-import io.github.han9912.zipin.job.repository.JobRepository;
+import io.github.han9912.zipin.job.mapper.JobMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +16,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class JobServiceImpl implements JobService{
     private static final Logger logger = LoggerFactory.getLogger(JobServiceImpl.class);
     @Autowired
-    JobRepository repo;
+    JobMapper jobMapper;
     @Autowired
     RedisTemplate<String, String> redisTemplate;
     @Autowired
@@ -36,7 +37,8 @@ public class JobServiceImpl implements JobService{
     public JobResponse createJob(JobRequest req, Long recruiterId) {
         Job job = Job.fromRequest(req, recruiterId);
         logger.info("新建职位：{} 创建人：{}", job.getTitle(), recruiterId);
-        return toResponse(repo.save(job));
+        jobMapper.insert(job);
+        return toResponse(job);
     }
 
     public void recordSearchKeyword(String keyword) {
@@ -56,43 +58,44 @@ public class JobServiceImpl implements JobService{
                 return responses;
             }
 
-            List<JobResponse> result = repo.search(keyword).stream().map(this::toResponse).toList();
+            List<JobResponse> result = jobMapper.search(keyword).stream().map(this::toResponse).toList();
             ops.set(redisKey, mapper.writeValueAsString(result), 10, TimeUnit.MINUTES);
             logger.info("Cached to redis: {} Entries: {}", keyword, result.size());
             hotJobService.incrementHotScore(result, 1);
             return result;
         } catch (Exception e) {
             logger.error("Search jobs error", e);
-            return repo.search(keyword).stream().map(this::toResponse).toList();
+            return jobMapper.search(keyword).stream().map(this::toResponse).toList();
         }
     }
 
     public JobResponse getJob(Long id){
         Job job = cacheWithLockHelper.getWithLogicalLock(
                 "job:detail:" + id,
-                () -> repo.findById(id).orElse(null),
+                () -> jobMapper.findById(id),
                 1800
         );
         return toResponse(job);
     }
 
     public JobResponse updateJob(Long id, JobRequest req, Long recruiterId){
-        Job job = repo.findById(id).orElseThrow();
+        Job job = Optional.ofNullable(jobMapper.findById(id)).orElseThrow();
         if (!job.getRecruiterId().equals(recruiterId)) {
             throw new RuntimeException("没有权限修改此职位 / No permission to alter");
         }
         job.setTitle(req.title);
         job.setDescription(req.description);
         job.setLocation(req.location);
-        return toResponse(repo.save(job));
+        jobMapper.insert(job);
+        return toResponse(job);
     }
 
     public void deleteJob(Long id, Long recruiterId){
-        Job job = repo.findById(id).orElseThrow();
+        Job job = Optional.ofNullable(jobMapper.findById(id)).orElseThrow();
         if (!job.getRecruiterId().equals(recruiterId)) {
             throw new RuntimeException("没有权限删除此职位 / No permission to delete");
         }
-        repo.delete(job);
+        jobMapper.delete(id);
         logger.info("删除职位 {} by recruiter {}", id, recruiterId);
         notificationService.sendAsyncDeleteNotice(id, recruiterId);
     }

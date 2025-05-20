@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.han9912.zipin.job.mapper.JobMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO jobs (recruiter_id, title, description, location)
+        VALUES (#{recruiterId}, #{title}, #{description}, #{location})
+    </insert>
+
+    <select id="search" resultType="io.github.han9912.zipin.job.entity.Job">
+        SELECT * FROM jobs
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        OR description LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+    <select id="findById" resultType="io.github.han9912.zipin.job.entity.Job">
+        SELECT * FROM jobs WHERE id = #{id}
+    </select>
+
+    <select id="findAllById" resultType="io.github.han9912.zipin.job.entity.Job">
+        SELECT *
+        FROM jobs
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <delete id="delete">
+        DELETE FROM jobs WHERE id = #{id}
+    </delete>
+</mapper>
