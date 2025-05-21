@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.han9912.zipin.resume.mapper.ResumeMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resumes (user_id, file_url, original_name)
+        VALUES (#{userId}, #{fileUrl}, #{originalName})
+    </insert>
+
+    <select id="findById" resultType="io.github.han9912.zipin.resume.entity.Resume">
+        SELECT * FROM resumes WHERE id = #{id}
+    </select>
+    <select id="findByUserId" resultType="io.github.han9912.zipin.resume.entity.Resume">
+        SELECT * FROM resumes WHERE user_id = #{userId}
+    </select>
+
+    <delete id="delete">
+        DELETE FROM resumes WHERE id = #{id}
+    </delete>
+</mapper>

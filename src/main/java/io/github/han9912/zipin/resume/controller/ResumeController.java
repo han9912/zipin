@@ -7,6 +7,7 @@ import io.github.han9912.zipin.resume.entity.Resume;
 import io.github.han9912.zipin.resume.service.ResumeService;
 import io.github.han9912.zipin.user.entity.Role;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,7 +22,7 @@ public class ResumeController {
     AuthUtil authUtil;
 
     @CheckRole(Role.JOB_SEEKER)
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Result<Resume> upload(@RequestParam("file") MultipartFile file,
                                  @RequestHeader("Authorization") String auth) {
         return Result.ok(service.upload(file, authUtil.resolveUid(auth)));
