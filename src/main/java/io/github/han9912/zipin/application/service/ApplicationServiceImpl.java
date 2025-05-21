@@ -9,7 +9,7 @@ import io.github.han9912.zipin.application.repository.ApplicationRepository;
 import io.github.han9912.zipin.common.service.NotificationService;
 import io.github.han9912.zipin.job.service.HotJobService;
 import io.github.han9912.zipin.resumeprofile.entity.ResumeProfile;
-import io.github.han9912.zipin.resumeprofile.repository.ResumeProfileRepository;
+import io.github.han9912.zipin.resumeprofile.mapper.ResumeProfileMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Autowired
     ApplicationRepository repo;
     @Autowired
-    ResumeProfileRepository profileRepo;
+    ResumeProfileMapper profileMapper;
     @Autowired
     ObjectMapper mapper;
     @Autowired
@@ -35,7 +35,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setResumeId(req.resumeId);
 
         // 保存结构化快照（JSON）
-        ResumeProfile profile = profileRepo.findByUserId(userId).orElse(null);
+        ResumeProfile profile = profileMapper.findByUserId(userId).orElse(null);
         if (profile != null) {
             try {
                 application.setProfileSnapshot(mapper.writeValueAsString(profile));

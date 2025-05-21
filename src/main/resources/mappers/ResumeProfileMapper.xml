@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.han9912.zipin.resumeprofile.mapper.ResumeProfileMapper">
+    <resultMap id="ResumeProfileMap" type="io.github.han9912.zipin.resumeprofile.entity.ResumeProfile">
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="education" column="education" typeHandler="io.github.han9912.zipin.common.util.ListMapStringHandler"/>
+        <result property="experience" column="experience" typeHandler="io.github.han9912.zipin.common.util.ListMapStringHandler"/>
+        <result property="skills" column="skills" typeHandler="io.github.han9912.zipin.common.util.ListStringHandler"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume_profiles (user_id, title, education, experience, skills)
+        VALUES (#{userId}, #{title},
+        #{education, typeHandler=io.github.han9912.zipin.common.util.ListMapStringHandler},
+        #{experience, typeHandler=io.github.han9912.zipin.common.util.ListMapStringHandler},
+        #{skills, typeHandler=io.github.han9912.zipin.common.util.ListStringHandler})
+    </insert>
+
+    <select id="findByUserId" resultMap="ResumeProfileMap">
+        SELECT * FROM resume_profiles WHERE user_id = #{userId}
+    </select>
+
+    <delete id="delete">
+        DELETE FROM resume_profiles WHERE id = #{id}
+    </delete>
+
+</mapper>

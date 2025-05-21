@@ -2,7 +2,7 @@ package io.github.han9912.zipin.resumeprofile.service;
 
 import io.github.han9912.zipin.resumeprofile.dto.ResumeProfileRequest;
 import io.github.han9912.zipin.resumeprofile.entity.ResumeProfile;
-import io.github.han9912.zipin.resumeprofile.repository.ResumeProfileRepository;
+import io.github.han9912.zipin.resumeprofile.mapper.ResumeProfileMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,19 +10,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResumeProfileServiceImpl implements ResumeProfileService {
     @Autowired
-    ResumeProfileRepository repo;
+    ResumeProfileMapper mapper;
 
     public ResumeProfile save(Long userId, ResumeProfileRequest req) {
-        ResumeProfile profile = repo.findByUserId(userId).orElse(new ResumeProfile());
+        ResumeProfile profile = mapper.findByUserId(userId).orElse(new ResumeProfile());
         profile.setUserId(userId);
         profile.setTitle(req.title);
         profile.setEducation(req.education);
         profile.setExperience(req.experience);
         profile.setSkills(req.skills);
-        return repo.save(profile);
+        mapper.insert(profile);
+        return profile;
     }
 
     public ResumeProfile getByUser(Long userId) {
-        return repo.findByUserId(userId).orElse(null);
+        return mapper.findByUserId(userId).orElse(null);
     }
 }
