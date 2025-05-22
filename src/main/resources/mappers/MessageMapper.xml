@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.han9912.zipin.message.mapper.MessageMapper">
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO messages (from_user_id, to_user_id, content)
+        VALUES (#{fromUserId}, #{toUserId}, #{content})
+    </insert>
+    
+    <select id="findByIds" resultType="io.github.han9912.zipin.message.entity.Message">
+        SELECT * FROM messages
+        WHERE from_user_id = #{uid1} AND to_user_id = #{uid2}
+           OR from_user_id = #{uid2} AND to_user_id = #{uid1}
+        ORDER BY sent_at ASC
+    </select>
+
+</mapper>
