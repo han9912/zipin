@@ -8,4 +8,13 @@
         INSERT INTO invitations (job_id, recruiter_id, seeker_id)
         VALUE (#{jobId}, #{recruiterId}, #{seekerId})
     </insert>
+    <select id="getInvitationCount" resultType="int">
+        SELECT remaining_invitations FROM recruiters
+        WHERE id = #{recruiterId}
+    </select>
+    <update id="decreaseInvitationCount">
+        UPDATE recruiters
+        SET remaining_invitations = remaining_invitations - 1
+        WHERE id = #{recruiterId} AND remaining_invitations > 0
+    </update>
 </mapper>
