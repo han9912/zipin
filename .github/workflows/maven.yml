@@ -1,30 +1,24 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Java CI with Maven
+name: Build and release Zipin MVP
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
+    tags: ["v*"]
   pull_request:
-    branches: [ "master" ]
+    branches: [master]
+
+permissions:
+  contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
+          MYSQL_DATABASE: zipin_mvp
         ports:
           - 3306:3306
         options: >-
@@ -33,47 +27,83 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-      redis:
-        image: redis:latest
-        ports:
-          - 6379:6379
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - uses: actions/checkout@v4
 
-    - name: Wait for MySQL to be ready
-      run: |
-        for i in {1..30}; do
-          if mysqladmin --protocol=tcp ping -h localhost -uroot -proot --silent; then
-            echo "MySQL is ready!"
-            break
-          fi
-          echo "Waiting for MySQL..."
-          sleep 2
-        done
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
 
-    - name: Initialize Database
-      run: |
-        mysql --protocol=tcp -h localhost -uroot -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
-    
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-      env:
-        SPRING_DATASOURCE_USERNAME: root
-        SPRING_DATASOURCE_PASSWORD: root
+      - name: Test and package the MVP backend
+        run: bash mvnw -B -P opportunity-mvp '-Dtest=Opportunity*Test,Telegram*Test,Jwt*Test' verify
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/zipin_mvp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          DB_USERNAME: root
+          DB_PASSWORD: root
 
-    - name: Run Tests
-      run: mvn test
-      env:
-        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_db
-        SPRING_DATASOURCE_USERNAME: root
-        SPRING_DATASOURCE_PASSWORD: root
-        SPRING_PROFILES_ACTIVE: test
+      - name: Build the frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
 
+      - name: Assemble versioned release bundle
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_dir="$RUNNER_TEMP/zipin-release"
+          mkdir -p "$package_dir/backend" "$package_dir/frontend"
+          jar_path="$(find target -maxdepth 1 -type f -name 'zipin-*.jar' ! -name '*.jar.original' -print -quit)"
+          test -n "$jar_path"
+          cp "$jar_path" "$package_dir/backend/zipin-mvp.jar"
+          cp -R frontend/dist/. "$package_dir/frontend/"
+          printf '%s\n' "$GITHUB_SHA" > "$package_dir/COMMIT"
+          archive="zipin-${GITHUB_REF_NAME}.tar.gz"
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/$archive" zipin-release
+          (cd "$RUNNER_TEMP" && sha256sum "$archive" > "$archive.sha256")
+
+      - name: Upload release bundle for the release job
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: zipin-release-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/zipin-${{ github.ref_name }}.tar.gz
+            ${{ runner.temp }}/zipin-${{ github.ref_name }}.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: zipin-release-${{ github.sha }}
+          path: release
+
+      - name: Publish GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${GITHUB_REF_NAME}"
+          "release/zipin-${GITHUB_REF_NAME}.tar.gz"
+          "release/zipin-${GITHUB_REF_NAME}.tar.gz.sha256"
+          --verify-tag
+          --title "${GITHUB_REF_NAME}"
+          --generate-notes

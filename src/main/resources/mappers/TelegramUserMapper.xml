@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.han9912.zipin.opportunity.mapper.TelegramUserMapper">
+    <resultMap id="telegramUserResult" type="io.github.han9912.zipin.opportunity.entity.TelegramUser">
+        <id property="id" column="id"/>
+        <result property="telegramId" column="telegram_id"/>
+        <result property="username" column="username"/>
+        <result property="displayName" column="display_name"/>
+        <result property="pictureUrl" column="picture_url"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="upsert">
+        INSERT INTO telegram_users (telegram_id, username, display_name, picture_url)
+        VALUES (#{telegramId}, #{username}, #{displayName}, #{pictureUrl})
+        ON DUPLICATE KEY UPDATE
+            username = VALUES(username),
+            display_name = VALUES(display_name),
+            picture_url = VALUES(picture_url),
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="findByTelegramId" resultMap="telegramUserResult">
+        SELECT id, telegram_id, username, display_name, picture_url, created_at, updated_at
+        FROM telegram_users
+        WHERE telegram_id = #{telegramId}
+    </select>
+
+    <select id="findById" resultMap="telegramUserResult">
+        SELECT id, telegram_id, username, display_name, picture_url, created_at, updated_at
+        FROM telegram_users
+        WHERE id = #{id}
+    </select>
+</mapper>

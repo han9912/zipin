@@ -12,16 +12,33 @@ spring:
     name: zipin
 
   datasource:
-    url: jdbc:mysql://localhost:3306/db_zipin?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: admin
-    password: your_password
+    url: ${DB_URL:jdbc:mysql://localhost:3306/zipin_mvp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   main:
     allow-bean-definition-overriding: true
 
-  profiles:
-    active: dev
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${AUTH_COOKIE_SECURE:false}
+        same-site: lax
+
+zipin:
+  auth:
+    telegram:
+      enabled: ${TELEGRAM_OIDC_ENABLED:false}
+      client-id: ${TELEGRAM_CLIENT_ID:}
+      client-secret: ${TELEGRAM_CLIENT_SECRET:}
+      redirect-uri: ${TELEGRAM_REDIRECT_URI:http://localhost:5173/api/auth/telegram/callback/telegram}
+      frontend-url: ${APP_FRONTEND_URL:http://localhost:5173/}
+      jwt-secret: ${ZIPIN_JWT_SECRET:}
+    cookie:
+      secure: ${AUTH_COOKIE_SECURE:false}
 
 management:
   endpoints:

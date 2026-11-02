@@ -1,0 +1,27 @@
+spring:
+  # Production schema changes must be reviewed and applied explicitly.
+  flyway:
+    enabled: false
+
+server:
+  address: 127.0.0.1
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  server:
+    address: 127.0.0.1
+    port: 8081
+
+logging:
+  level:
+    root: INFO
+    io.github.han9912.zipin: INFO
