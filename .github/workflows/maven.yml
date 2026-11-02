@@ -45,7 +45,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Test and package the MVP backend
-        run: bash mvnw -B -P opportunity-mvp '-Dtest=Opportunity*Test,Telegram*Test,Jwt*Test' verify
+        run: bash ./mvnw -B -P opportunity-mvp '-Dtest=Opportunity*Test,Telegram*Test,Jwt*Test' verify
         env:
           DB_URL: jdbc:mysql://localhost:3306/zipin_mvp?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
           DB_USERNAME: root
