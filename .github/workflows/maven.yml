@@ -91,6 +91,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@v4
+
       - name: Download release bundle
         uses: actions/download-artifact@v4
         with:
