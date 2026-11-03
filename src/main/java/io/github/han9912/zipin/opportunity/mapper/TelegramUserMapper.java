@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Param;
 public interface TelegramUserMapper {
     void upsert(TelegramUser user);
 
-    TelegramUser findByTelegramId(@Param("telegramId") Long telegramId);
+    TelegramUser findByTelegramId(@Param("telegramId") String telegramId);
 
     TelegramUser findById(@Param("id") Long id);
 }

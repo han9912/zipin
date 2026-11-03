@@ -1,6 +1,7 @@
 package io.github.han9912.zipin.opportunity.config;
 
 import io.github.han9912.zipin.opportunity.security.JwtAuthenticationFilter;
+import io.github.han9912.zipin.opportunity.security.TelegramAuthFailureHandler;
 import io.github.han9912.zipin.opportunity.security.TelegramAuthSuccessHandler;
 import io.github.han9912.zipin.opportunity.service.TelegramOidcUserService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -29,6 +30,7 @@ public class OpportunityMvpSecurityConfiguration {
             ObjectProvider<ClientRegistrationRepository> registrations,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             TelegramOidcUserService telegramOidcUserService,
+            ObjectProvider<TelegramAuthFailureHandler> failureHandlers,
             ObjectProvider<TelegramAuthSuccessHandler> successHandlers,
             SessionCookieProperties cookieProperties
     ) throws Exception {
@@ -59,6 +61,10 @@ public class OpportunityMvpSecurityConfiguration {
             if (successHandler == null) {
                 throw new IllegalStateException("Telegram OIDC is enabled but its login handler is unavailable.");
             }
+            TelegramAuthFailureHandler failureHandler = failureHandlers.getIfAvailable();
+            if (failureHandler == null) {
+                throw new IllegalStateException("Telegram OIDC is enabled but its failure handler is unavailable.");
+            }
             DefaultOAuth2AuthorizationRequestResolver requestResolver =
                     new DefaultOAuth2AuthorizationRequestResolver(registrationRepository, LOGIN_BASE_URI);
             requestResolver.setAuthorizationRequestCustomizer(
@@ -70,7 +76,8 @@ public class OpportunityMvpSecurityConfiguration {
                             .authorizationRequestResolver(requestResolver))
                     .redirectionEndpoint(endpoint -> endpoint.baseUri(CALLBACK_BASE_URI))
                     .userInfoEndpoint(endpoint -> endpoint.oidcUserService(telegramOidcUserService))
-                    .successHandler(successHandler));
+                    .successHandler(successHandler)
+                    .failureHandler(failureHandler));
         }
 
         return http.build();

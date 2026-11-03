@@ -19,7 +19,7 @@ public class TelegramUserPrincipal implements UserDetails {
         return user.getId();
     }
 
-    public Long getTelegramId() {
+    public String getTelegramId() {
         return user.getTelegramId();
     }
 
@@ -28,7 +28,7 @@ public class TelegramUserPrincipal implements UserDetails {
     }
 
     public String getUsername() {
-        return getTelegramUsername() == null ? user.getTelegramId().toString() : getTelegramUsername();
+        return getTelegramUsername() == null ? user.getTelegramId() : getTelegramUsername();
     }
 
     public String getDisplayName() {

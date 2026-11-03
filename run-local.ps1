@@ -68,7 +68,7 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 $env:SPRING_PROFILES_ACTIVE = 'dev'
 if ($TestDatabase) {
     & (Join-Path $PSScriptRoot 'mvnw.cmd') `
-        '-Dtest=OpportunityDatabaseIntegrationTest,OpportunityServiceTest,TelegramOidcAuthorizationTest,JwtSessionServiceTest,TelegramAuthSuccessHandlerTest' `
+        '-Dtest=OpportunityDatabaseIntegrationTest,OpportunityServiceTest,TelegramOidcAuthorizationTest,TelegramUserServiceTest,JwtSessionServiceTest,TelegramAuthSuccessHandlerTest,TelegramAuthFailureHandlerTest' `
         test
 } else {
     & (Join-Path $PSScriptRoot 'mvnw.cmd') '-Popportunity-mvp' spring-boot:run

@@ -15,7 +15,7 @@ class JwtSessionServiceTest {
         JwtSessionService service = new JwtSessionService(properties());
         TelegramUser user = new TelegramUser();
         user.setId(42L);
-        user.setTelegramId(123456789L);
+        user.setTelegramId("123456789");
 
         String token = service.issue(user);
 
@@ -27,7 +27,7 @@ class JwtSessionServiceTest {
         JwtSessionService service = new JwtSessionService(properties());
         TelegramUser user = new TelegramUser();
         user.setId(42L);
-        user.setTelegramId(123456789L);
+        user.setTelegramId("123456789");
         String token = service.issue(user);
         String[] parts = token.split("\\.");
         parts[2] = (parts[2].startsWith("a") ? "b" : "a") + parts[2].substring(1);

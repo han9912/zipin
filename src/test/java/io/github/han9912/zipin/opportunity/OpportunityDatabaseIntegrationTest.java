@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,8 +56,22 @@ class OpportunityDatabaseIntegrationTest {
     }
 
     @Test
+    void telegramSubjectLargerThanLongPersistsAsAString() {
+        String subject = "9223372036854775808";
+
+        TelegramUser user = telegramUser(subject);
+        TelegramUser mixedCaseUser = telegramUser("SubjectABC");
+        TelegramUser differentCaseUser = telegramUser("subjectabc");
+
+        assertEquals(subject, user.getTelegramId());
+        assertEquals("SubjectABC", mixedCaseUser.getTelegramId());
+        assertEquals("subjectabc", differentCaseUser.getTelegramId());
+        assertNotEquals(mixedCaseUser.getId(), differentCaseUser.getId());
+    }
+
+    @Test
     void postWritesToMySqlAndGetReadsTheSavedOpportunity() throws Exception {
-        TelegramUser user = telegramUser(123456789L);
+        TelegramUser user = telegramUser("123456789");
         mockMvc.perform(post("/api/opportunities")
                         .with(csrf())
                         .with(authentication(new UsernamePasswordAuthenticationToken(
@@ -93,7 +108,7 @@ class OpportunityDatabaseIntegrationTest {
 
     @Test
     void postRejectsBlankRequiredFields() throws Exception {
-        TelegramUser user = telegramUser(123456790L);
+        TelegramUser user = telegramUser("123456790");
         mockMvc.perform(post("/api/opportunities")
                         .with(csrf())
                         .with(authentication(new UsernamePasswordAuthenticationToken(
@@ -122,7 +137,7 @@ class OpportunityDatabaseIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    private TelegramUser telegramUser(Long telegramId) {
+    private TelegramUser telegramUser(String telegramId) {
         TelegramUser user = new TelegramUser();
         user.setTelegramId(telegramId);
         user.setDisplayName("Integration test user");

@@ -46,7 +46,13 @@ The MVP stores four fields: `category`, `title`, `content`, and `contact`. Creat
 - `GET /api/auth/csrf` — returns the CSRF token required for state-changing requests.
 - `POST /api/auth/logout` — clears the HttpOnly login cookie.
 
-OIDC authorization uses the authorization-code flow with PKCE. Spring Security validates the ID-token signature, issuer, audience, expiry and nonce. The application stores Telegram's stable numeric subject and basic profile fields; it does not automatically link legacy email accounts. The session is a 12-hour signed JWT in an HttpOnly, SameSite=Lax cookie. CSRF protection is enabled for POST requests. Logout clears the browser cookie; already-copied tokens remain valid until expiry.
+OIDC authorization uses the authorization-code flow with PKCE. Spring Security validates the ID-token signature, issuer, audience, expiry and nonce. The application stores Telegram's stable OIDC subject as an opaque string, along with basic profile fields; it does not automatically link legacy email accounts. The session is a 12-hour signed JWT in an HttpOnly, SameSite=Lax cookie. CSRF protection is enabled for POST requests. Logout clears the browser cookie; already-copied tokens remain valid until expiry.
+
+The callback URL is handled by Spring Security's OAuth2 login filter, not by a standalone frontend page. A successful callback validates the OIDC response, stores the Telegram user, issues the session cookie, and redirects to the configured frontend URL. A failed or cancelled login redirects to the frontend with a fixed `auth=telegram-failed` marker; the frontend displays a generic retry/configuration message and removes that marker from the address bar. Provider error details are not sent to the browser.
+
+For a reproducible investigation of callback errors, observed production responses, safe diagnostics, and the remaining unknowns, see [Telegram OIDC callback troubleshooting](./docs/telegram-oidc-callback-troubleshooting.md).
+
+For the full browser-to-backend OIDC call sequence, consent redirect, authorization-code exchange, session cookie, and post-login status check, see [Telegram login flow](./docs/telegram-oidc-login-flow.md).
 
 For production, copy `production.env.example` into a protected runtime configuration (never commit populated values), set the RDS connection after verifying its schema and TLS requirements, and provide Telegram and JWT secrets through a managed secret store. The `prod` profile requires Telegram authentication, secure cookies, and HTTPS callback/frontend URLs. It binds the application to loopback, exposes only the health endpoint on loopback port 8081, and disables automatic Flyway migrations so deployment cannot silently change a production schema. Review and apply migrations separately after confirming the actual schema, data retention, and backup/rollback requirements.
 
@@ -63,7 +69,7 @@ sha256sum -c "zipin-${VERSION}.tar.gz.sha256"
 
 For a private repository, authenticate to GitHub before downloading the release. This workflow publishes artifacts only; it does not connect to or deploy to AWS. The OIDC state is held in the login-flow HTTP session; for multiple app instances, use load-balancer stickiness or a shared session store. Do not deploy the local dev server publicly.
 
-The V2 Flyway migration adds a Telegram user table and nullable publisher reference while preserving old anonymous listings. Before applying it to AWS, inspect the actual production schema and data and confirm backup/rollback requirements. This code change does not authorize or perform a production migration or deployment.
+The V2 Flyway migration adds a Telegram user table and nullable publisher reference while preserving old anonymous listings. V3 changes the external Telegram OIDC subject column from BIGINT to a case-sensitive ASCII VARCHAR, preserving existing decimal IDs as strings. Before applying migrations to AWS, inspect the actual production schema and data and confirm backup/rollback requirements. This code change does not authorize or perform a production migration or deployment.
 
 ## Verify
 

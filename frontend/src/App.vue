@@ -210,7 +210,17 @@ function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') closeDialogs()
 }
 
+function handleTelegramAuthRedirect() {
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('auth') !== 'telegram-failed') return
+
+  authError.value = 'Telegram 登录失败或已取消，请重试。若反复失败，请检查 Telegram 登录应用的回调地址配置。'
+  url.searchParams.delete('auth')
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+}
+
 onMounted(() => {
+  handleTelegramAuthRedirect()
   window.addEventListener('keydown', handleKeydown)
   void loadOpportunities()
   void loadAuthStatus()

@@ -55,9 +55,19 @@ class TelegramOidcAuthorizationTest {
     }
 
     @Test
+    void providerDenialRedirectsToFrontendWithoutExposingProviderDetails() throws Exception {
+        mockMvc.perform(get("/api/auth/telegram/callback/telegram")
+                        .queryParam("error", "access_denied")
+                        .queryParam("error_description", "provider detail")
+                        .queryParam("state", "invalid-state"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", "http://localhost:5173/?auth=telegram-failed"));
+    }
+
+    @Test
     void validSessionCookieAuthenticatesAgainstTheTelegramUserRecord() throws Exception {
         TelegramUser user = new TelegramUser();
-        user.setTelegramId(555001L);
+        user.setTelegramId("555001");
         user.setUsername("oidc_test_user");
         user.setDisplayName("OIDC Test User");
         telegramUserMapper.upsert(user);

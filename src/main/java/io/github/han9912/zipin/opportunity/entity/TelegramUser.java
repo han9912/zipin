@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class TelegramUser {
     private Long id;
-    private Long telegramId;
+    private String telegramId;
     private String username;
     private String displayName;
     private String pictureUrl;
@@ -19,11 +19,11 @@ public class TelegramUser {
         this.id = id;
     }
 
-    public Long getTelegramId() {
+    public String getTelegramId() {
         return telegramId;
     }
 
-    public void setTelegramId(Long telegramId) {
+    public void setTelegramId(String telegramId) {
         this.telegramId = telegramId;
     }
 

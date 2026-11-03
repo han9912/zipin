@@ -6,8 +6,12 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+
 @Service
 public class TelegramUserService {
+    private static final int MAX_SUBJECT_LENGTH = 255;
+
     private final TelegramUserMapper telegramUserMapper;
 
     public TelegramUserService(TelegramUserMapper telegramUserMapper) {
@@ -16,11 +20,14 @@ public class TelegramUserService {
 
     @Transactional
     public TelegramUser upsertFromOidc(OidcUser oidcUser) {
-        Long telegramId;
-        try {
-            telegramId = Long.valueOf(oidcUser.getSubject());
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Telegram OIDC subject must be a numeric Telegram user ID.", exception);
+        String telegramId = oidcUser.getSubject();
+        if (telegramId == null
+                || telegramId.isBlank()
+                || telegramId.length() > MAX_SUBJECT_LENGTH
+                || !StandardCharsets.US_ASCII.newEncoder().canEncode(telegramId)) {
+            throw new IllegalArgumentException(
+                    "Telegram OIDC subject must be a non-empty ASCII string of at most 255 characters."
+            );
         }
 
         String username = oidcUser.getClaimAsString("preferred_username");

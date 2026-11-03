@@ -1,0 +1,75 @@
+Telegram OIDC 登录回调 403 排查经验
+====================================
+
+背景
+----
+用户完成 Telegram 授权后，浏览器停留在登录回调页面并显示 403。回调由 Spring Security OAuth2/OIDC 登录流程处理；只有回调处理成功并保存本地用户、签发会话 Cookie 后，登录才算完成。
+
+排查过程
+--------
+1. 先判断请求是否经过 Nginx
+
+   在服务器观察 Nginx 访问日志和错误日志：
+
+       sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log
+
+   access.log 有对应回调请求，说明请求到达了 Nginx。error.log 没有相关异常，说明当时没有观察到 Nginx 记录的错误。
+
+   这一步只能确认入口层收到请求，不能单独证明 403 一定由后端生成。Nginx 也可能正常记录一个由上游返回的错误状态；还需要结合应用日志、请求时间和响应信息继续定位。
+
+2. 查看 Spring Boot 应用日志
+
+   通过 systemd 日志观察服务端异常：
+
+       sudo journalctl -u your-service -f
+
+   在与回调请求对应的时间附近，发现异常链包含：
+
+       Caused by: java.lang.NumberFormatException
+       io.github.han9912.zipin.opportunity.service.TelegramUserService.upsertFromOidc(...)
+
+   这说明请求已经进入 Java 应用，并执行到 Telegram 用户保存逻辑，而不只是被 Nginx 拒绝。
+
+3. 沿异常定位具体代码
+
+   当时的实现把 OIDC subject 当作 Java Long 解析。日志中 subject 是一个纯数字字符串，但数值大于 Java Long 的最大值：
+
+       9223372036854775807
+
+   因此 Long.valueOf(subject) 抛出 NumberFormatException。异常发生在认证回调成功处理阶段保存本地 Telegram 用户时；用户记录和 Zipin 会话 Cookie 尚未完成创建。
+
+确认的根因
+----------
+根因不是回调 URL 多了一段路径，也不是根据“没有 Nginx error.log 记录”就能确认的 Nginx 403。
+
+实际失败点是应用将 Telegram OIDC 的 sub（subject）错误地转换为 Long。OIDC subject 应当作为不透明字符串处理，不能假设它一定是可装入 Java Long 的数字。此次异常发生在用户 upsert 阶段，因此授权流程已经到达应用的成功处理逻辑，但 Zipin 本地登录没有完成。
+
+修复原则与结果
+--------------
+1. 将外部 OIDC subject 在 Java 中保留为原始字符串；本地 Zipin 用户主键仍可以使用 Long，两者职责不同。
+2. 数据库外部 ID 列使用字符串类型，并保持大小写敏感，避免不同 subject 被错误地视为同一身份。
+3. 校验 subject 非空、长度在允许范围内，并满足数据库字符集约束；不做数值转换。
+4. 增加测试，覆盖超出 Long 范围的数字字符串，以及大小写不同的 subject。
+5. 通过新的 Flyway V3 迁移把 telegram_id 从 BIGINT 改为 VARCHAR(255)，不修改已经发布的旧迁移。
+
+本地定向数据库测试已通过；这不代表生产数据库已迁移。应用生产迁移前，仍须先核对生产 schema、现存数据、备份及回滚要求，并取得相应授权。
+
+可复用的分层排查步骤
+--------------------
+1. 记录一次失败的本地时间和时区，避免重放或分享带有 code/state 的完整回调 URL。
+2. 查看 Nginx access.log，确认对应请求及其状态码；查看 error.log 是否有入口层错误。
+3. 将同一时间范围与 Spring Boot/systemd 日志对齐，判断请求是否进入应用，以及失败发生在 OAuth 回调验证、成功处理器还是后续业务逻辑。
+4. 若应用堆栈指向业务代码，沿异常类型和代码行检查输入转换、数据库操作和 Cookie 签发顺序。
+5. 修复后分别验证：超长数字 subject 可保存并读回、大小写不同 subject 可区分、完整 OIDC 回调完成本地登录。
+6. 不要因 access.log 有记录或 error.log 没有记录，就单独断定错误由某一层产生；以应用异常和实际 HTTP 响应共同确认。
+
+日志与凭据安全
+--------------
+- 不要把真实授权码、state、Cookie、ID Token、Access Token 或客户端密钥写入文档、工单或聊天。
+- 分享日志前先脱敏 subject、个人资料、查询参数和认证信息。
+- 不要通过手动重放旧 callback URL 来复测；授权码是短时凭据，且通常只能使用一次。
+- 保持 CSRF 和 OIDC state 校验开启，不以关闭安全机制作为排查手段。
+
+边界说明
+--------
+本文记录的是一次本地代码排查和修复经验。生产环境的数据库迁移、服务器操作和部署需要单独核实并授权；本文件不表示这些操作已经执行。

@@ -35,7 +35,7 @@ class TelegramAuthSuccessHandlerTest {
         JwtSessionService sessionService = new JwtSessionService(authProperties);
         TelegramUser user = new TelegramUser();
         user.setId(42L);
-        user.setTelegramId(123456789L);
+        user.setTelegramId("123456789");
         OidcUser oidcUser = mock(OidcUser.class);
         when(userService.upsertFromOidc(oidcUser)).thenReturn(user);
 
